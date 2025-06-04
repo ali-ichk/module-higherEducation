@@ -107,4 +107,11 @@ class ReferenceGateway extends QueryableGateway
         return $this->runQuery($query, $criteria);
     }
 
+    public function selectReferencePersonByComponentID($higherEducationReferenceComponentID) 
+    {
+        $data = ['higherEducationReferenceComponentID' => $higherEducationReferenceComponentID];
+        $sql = 'SELECT higherEducationReference.gibbonPersonID AS gibbonPersonIDStudent, preferredName, surname, higherEducationReference.type as refType, higherEducationReference.notes, higherEducationReferenceComponent.* FROM higherEducationReferenceComponent JOIN higherEducationReference ON (higherEducationReferenceComponent.higherEducationReferenceID=higherEducationReference.higherEducationReferenceID) JOIN gibbonPerson ON (higherEducationReference.gibbonPersonID=gibbonPerson.gibbonPersonID) WHERE higherEducationReferenceComponentID=:higherEducationReferenceComponentID';
+
+       return $this->db()->select($sql, $data);
+    }
 }
