@@ -1,6 +1,5 @@
 <?php
-use Gibbon\Forms\Form;
-use Gibbon\Forms\DatabaseFormFactory;
+/*
 Gibbon: the flexible, open school platform
 Founded by Ross Parker at ICHK Secondary. Built by Ross Parker, Sandra Kuipers and the Gibbon community (https://gibbonedu.org/about/)
 Copyright © 2010, Gibbon Foundation
@@ -19,6 +18,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+
+use Gibbon\Forms\Form;
+use Gibbon\Forms\DatabaseFormFactory;
 
 if (isActionAccessible($guid, $connection2, '/modules/Higher Education/references_manage_edit.php') == false) {
     //Acess denied
