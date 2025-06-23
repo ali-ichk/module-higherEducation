@@ -22,7 +22,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 use Gibbon\Http\Url;
 use Gibbon\Forms\Form;
 use Gibbon\Services\Format;
-use Gibbon\Tables\DataTable;
+use Gibbon\Domain\System\HookGateway;
+use Gibbon\Domain\System\ActionGateway;
+use Gibbon\Module\HigherEducation\Domain\StudentGateway;
 use Gibbon\Module\HigherEducation\Domain\ReferenceGateway;
 
 // Module includes
@@ -62,8 +64,8 @@ if (isActionAccessible($guid, $connection2, '/modules/Higher Education/reference
             $form->setTitle(__m('Reference Information'));
 
             $row = $form->addRow();
-                $row->addLabel('gibbonPersonIDStudent', __m('Student'));
-                $row->addTextField('gibbonPersonIDStudent')->readonly()->setValue(Format::name('', $values['preferredName'], $values['surname'], 'Student', false, false));
+                $row->addLabel('student', __m('Student'));
+                $row->addTextField('student')->readonly()->setValue(Format::name('', $values['preferredName'], $values['surname'], 'Student', false, false));
 
             $row = $form->addRow();
                 $row->addLabel('type', __m('Type'));
@@ -91,36 +93,19 @@ if (isActionAccessible($guid, $connection2, '/modules/Higher Education/reference
 
             $gibbonModuleID = checkModuleReady('/modules/IB Diploma/index.php', $connection2);
 
-            if (!empty($gibbonModuleID)) {
-                try {
-                    $dataAction = ['gibbonModuleID' => $gibbonModuleID, 'actionName' => 'View CAS in Student Profile', 'gibbonRoleID' => $session->get('gibbonRoleIDCurrent')];
-                    $sqlAction = 'SELECT gibbonAction.name FROM gibbonAction JOIN gibbonPermission ON (gibbonAction.gibbonActionID=gibbonPermission.gibbonActionID) JOIN gibbonRole ON (gibbonPermission.gibbonRoleID=gibbonRole.gibbonRoleID) WHERE (gibbonAction.name=:actionName) AND (gibbonPermission.gibbonRoleID=:gibbonRoleID) AND gibbonAction.gibbonModuleID=:gibbonModuleID';
-                    $resultAction = $connection2->prepare($sqlAction);
-                    $resultAction->execute($dataAction);
-                } catch (PDOException $e) {
-                }
+            if (!empty($gibbonModuleID)) {        
+                $resultAction = $container->get(ActionGateway::class)->selectActionByModuleAndRole($gibbonModuleID, $session->get('gibbonRoleIDCurrent'));
 
                 if ($resultAction->rowCount() > 0) {
-                    try {
-                        $dataHooks = [];
-                        $sqlHooks = "SELECT * FROM gibbonHook WHERE type='Student Profile' AND name='IB Diploma CAS'";
-                        $resultHooks = $connection2->prepare($sqlHooks);
-                        $resultHooks->execute($dataHooks);
-                    } catch (PDOException $e) {
-                    }
+                    $resultHooks = $container->get(HookGateway::class)->selectBy(['type' => 'Student Profile', 'name' => 'IB Diploma CAS']);
 
                     if ($resultHooks->rowCount() == 1) {
                         $rowHooks = $resultHooks->fetch();
                         $options = unserialize($rowHooks['options']);
-                        // Check for permission to hook
-                        try {
-                            $dataHook = ['gibbonRoleIDCurrent' => $session->get('gibbonRoleIDCurrent'), 'sourceModuleName' => $options['sourceModuleName']];
-                            $sqlHook = "SELECT gibbonHook.name, gibbonModule.name AS module, gibbonAction.name AS action FROM gibbonHook JOIN gibbonModule ON (gibbonModule.name='".$options['sourceModuleName']."') JOIN gibbonAction ON (gibbonAction.name='".$options['sourceModuleAction']."') JOIN gibbonPermission ON (gibbonPermission.gibbonActionID=gibbonAction.gibbonActionID) WHERE gibbonAction.gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE gibbonPermission.gibbonRoleID=:gibbonRoleIDCurrent AND name=:sourceModuleName) AND gibbonHook.type='Student Profile' ORDER BY name";
-                            $resultHook = $connection2->prepare($sqlHook);
-                            $resultHook->execute($dataHook);
-                        } catch (PDOException $e) {
-                        }
 
+                        // Check for permission to hook
+                        $resultHook = $container->get(HookGateway::class)->selectPermissionByRoleToHook(['gibbonRoleIDCurrent' => $session->get('gibbonRoleIDCurrent'), 'sourceModuleName' => $options['sourceModuleName'], 'sourceModuleAction' => $options['sourceModuleAction']]);
+                        
                         if ($resultHook->rowCount() == 1) {
                             $hookUrl = Url::fromModuleRoute('Students', 'student_view_details.php')->withQueryParams(['gibbonPersonID' => $values['gibbonPersonIDStudent'], 'hook' => $rowHooks['name'], 'module' => $options['sourceModuleName'], 'action' => $options['sourceModuleAction'], 'gibbonHookID' => $rowHooks['gibbonHookID']]);
                             $row->addContent(Format::link($hookUrl, __m($rowHooks['name']), ['class' => 'w-full ml-2 underline', 'target' => '_blank']));
@@ -137,15 +122,7 @@ if (isActionAccessible($guid, $connection2, '/modules/Higher Education/reference
                 $row->addContent(Format::link($behaviourUrl, __m('Behaviour'), ['class' => 'w-full ml-2 underline', 'target' => '_blank']));
                 $row->addContent(Format::link($attendanceUrl, __m('Attendance'), ['class' => 'w-full ml-2 underline', 'target' => '_blank']));
 
-            
-            try {
-                $dataNotes = ['gibbonPersonID' => $values['gibbonPersonIDStudent']];
-                $sqlNotes = 'SELECT * FROM higherEducationStudent WHERE gibbonPersonID=:gibbonPersonID';
-                $resultNotes = $connection2->prepare($sqlNotes);
-                $resultNotes->execute($dataNotes);
-            } catch (PDOException $e) {
-                $page->addWarning($e->getMessage());
-            }
+            $resultNotes = $container->get(StudentGateway::class)->selectBy(['gibbonPersonID' => $values['gibbonPersonIDStudent']]);
 
             if ($resultNotes->rowCount() == 1) {
                 $rowNotes = $resultNotes->fetch();
