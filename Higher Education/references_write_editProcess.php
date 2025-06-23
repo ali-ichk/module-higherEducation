@@ -29,29 +29,29 @@ $higherEducationReferenceComponentID = $_GET['higherEducationReferenceComponentI
 $URL = $session->get('absoluteURL').'/index.php?q=/modules/'.getModuleName($_POST['address'])."/references_write_edit.php&higherEducationReferenceComponentID=$higherEducationReferenceComponentID&gibbonSchoolYearID=$gibbonSchoolYearID";
 
 if (isActionAccessible($guid, $connection2, '/modules/Higher Education/references_write_edit.php') == false) {
-    //Fail 0
+    // Fail0
     $URL = $URL.'&return=error0';
     header("Location: {$URL}");
 } else {
     if ($higherEducationReferenceComponentID == '' or $gibbonSchoolYearID == '') {
-        //Fail1
+        // Fail1
         $URL = $URL.'&return=error1';
         header("Location: {$URL}");
     } else {
         try {
-            $data = array('higherEducationReferenceComponentID' => $higherEducationReferenceComponentID, 'gibbonPersonID' => $session->get('gibbonPersonID'));
+            $data = ['higherEducationReferenceComponentID' => $higherEducationReferenceComponentID, 'gibbonPersonID' => $session->get('gibbonPersonID')];
             $sql = 'SELECT * FROM higherEducationReferenceComponent WHERE higherEducationReferenceComponentID=:higherEducationReferenceComponentID AND gibbonPersonID=:gibbonPersonID';
             $result = $connection2->prepare($sql);
             $result->execute($data);
         } catch (PDOException $e) {
-            //Fail2
+            // Fail2
             $URL = $URL.'&return=error2';
             header("Location: {$URL}");
             exit();
         }
 
         if ($result->rowCount() != 1) {
-            //Fail 2
+            // Fail 2
             $URL = $URL.'&return=error2';
             header("Location: {$URL}");
         } else {
@@ -60,24 +60,24 @@ if (isActionAccessible($guid, $connection2, '/modules/Higher Education/reference
             $body = $_POST['body'] ?? '';
 
             if ($status == '' or $body == '') {
-                //Fail 3
+                // Fail 3
                 $URL = $URL.'&return=error3';
                 header("Location: {$URL}");
             } else {
-                //Write to database
+                // Write to database
                 try {
-                    $data = array('status' => $status, 'body' => $body, 'higherEducationReferenceComponentID' => $higherEducationReferenceComponentID);
+                    $data = ['status' => $status, 'body' => $body, 'higherEducationReferenceComponentID' => $higherEducationReferenceComponentID];
                     $sql = 'UPDATE higherEducationReferenceComponent SET status=:status, body=:body WHERE higherEducationReferenceComponentID=:higherEducationReferenceComponentID';
                     $result = $connection2->prepare($sql);
                     $result->execute($data);
                 } catch (PDOException $e) {
-                    //Fail 2
+                    // Fail 2
                     $URL = $URL.'&return=error2';
                     header("Location: {$URL}");
                     exit();
                 }
 
-                //Success 0
+                // Success 0
                 $URL = $URL.'&return=success0';
                 header("Location: {$URL}");
             }

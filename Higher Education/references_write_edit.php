@@ -22,8 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 use Gibbon\Http\Url;
 use Gibbon\Forms\Form;
 use Gibbon\Services\Format;
-use Gibbon\Domain\System\HookGateway;
-use Gibbon\Domain\System\ActionGateway;
 use Gibbon\Module\HigherEducation\Domain\StudentGateway;
 use Gibbon\Module\HigherEducation\Domain\ReferenceGateway;
 
@@ -80,7 +78,6 @@ if (isActionAccessible($guid, $connection2, '/modules/Higher Education/reference
 
             $markbookUrl = Url::fromModuleRoute('Students', 'student_view_details.php')->withQueryParams(['gibbonPersonID' => $values['gibbonPersonIDStudent'], 'subpage' => 'Markbook']);
             $externamAssessmentUrl = Url::fromModuleRoute('Students', 'student_view_details.php')->withQueryParams(['gibbonPersonID' => $values['gibbonPersonIDStudent'], 'subpage' => 'External Assessment']);
-            
             $row = $form->addRow();
                 $row->addLabel('academic', __m('Academic'));
                 $row->addContent(Format::link($markbookUrl, __m('Markbook'), ['class' => 'w-full ml-2 underline', 'target' => '_blank']));
@@ -90,29 +87,6 @@ if (isActionAccessible($guid, $connection2, '/modules/Higher Education/reference
             $row = $form->addRow();
                 $row->addLabel('coCurricular', __m('Co-curricular'));
                 $row->addContent(Format::link($activitiesUrl, __m('Activities'), ['class' => 'w-full ml-2 underline', 'target' => '_blank']));
-
-            $gibbonModuleID = checkModuleReady('/modules/IB Diploma/index.php', $connection2);
-
-            if (!empty($gibbonModuleID)) {        
-                $resultAction = $container->get(ActionGateway::class)->selectActionByModuleAndRole($gibbonModuleID, $session->get('gibbonRoleIDCurrent'));
-
-                if ($resultAction->rowCount() > 0) {
-                    $resultHooks = $container->get(HookGateway::class)->selectBy(['type' => 'Student Profile', 'name' => 'IB Diploma CAS']);
-
-                    if ($resultHooks->rowCount() == 1) {
-                        $rowHooks = $resultHooks->fetch();
-                        $options = unserialize($rowHooks['options']);
-
-                        // Check for permission to hook
-                        $resultHook = $container->get(HookGateway::class)->selectPermissionByRoleToHook(['gibbonRoleIDCurrent' => $session->get('gibbonRoleIDCurrent'), 'sourceModuleName' => $options['sourceModuleName'], 'sourceModuleAction' => $options['sourceModuleAction']]);
-                        
-                        if ($resultHook->rowCount() == 1) {
-                            $hookUrl = Url::fromModuleRoute('Students', 'student_view_details.php')->withQueryParams(['gibbonPersonID' => $values['gibbonPersonIDStudent'], 'hook' => $rowHooks['name'], 'module' => $options['sourceModuleName'], 'action' => $options['sourceModuleAction'], 'gibbonHookID' => $rowHooks['gibbonHookID']]);
-                            $row->addContent(Format::link($hookUrl, __m($rowHooks['name']), ['class' => 'w-full ml-2 underline', 'target' => '_blank']));
-                        }
-                    }
-                }
-            }
 
             $behaviourUrl = Url::fromModuleRoute('Students', 'student_view_details.php')->withQueryParams(['gibbonPersonID' => $values['gibbonPersonIDStudent'], 'subpage' => 'Behaviour']);
             $attendanceUrl = Url::fromModuleRoute('Students', 'student_view_details.php')->withQueryParams(['gibbonPersonID' => $values['gibbonPersonIDStudent'], 'subpage' => 'School Attendance']);
@@ -148,7 +122,7 @@ if (isActionAccessible($guid, $connection2, '/modules/Higher Education/reference
             $row = $form->addRow();
                 $column = $row->addColumn();
                 $column->addLabel('body', __m('Reference'))->description(__m($values['refType'] == 'US Reference' ? 'Maximum limit of 10,000 characters.' : 'Maximum limit of 2,000 characters.'));
-                $column->addTextArea('body')->setRows(20)->setClass('w-full')->maxLength($values['refType'] == 'US Reference' ? 10000 : 2000)->setValue($values['body']);
+                $column->addTextArea('body')->setRows(20)->setClass('w-full')->maxLength($values['refType'] == 'US Reference' ? 10000 : 2000)->setValue($values['body'])->required();
 
            $row = $form->addRow();
                     $row->addLabel('status', __('Status'));
