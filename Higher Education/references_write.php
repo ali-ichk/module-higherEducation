@@ -31,7 +31,7 @@ if (isActionAccessible($guid, $connection2, '/modules/Higher Education/reference
     $page->addError(__('You do not have access to this action.'));
 } else {
     //Proceed!
-    $page->breadcrumbs->add(__('Write References'));
+    $page->breadcrumbs->add(__m('Write References'));
 
     $gibbonSchoolYearID = $_GET['gibbonSchoolYearID'] ?? null;
     if ($gibbonSchoolYearID == '') {
